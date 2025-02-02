@@ -1,7 +1,14 @@
 package src.models;
+import src.utils.GreekAlphabet;
 import src.utils.Hemisphere;
 
 import java.lang.Math;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Star {
     private String name;
@@ -15,6 +22,9 @@ public class Star {
     private Hemisphere hemisphere;
     private double temperature;
     private double mass;
+
+    // map that contains the number of stars in each catalog
+    private static final Map<String, Integer> constellationStarCount = new HashMap<>();
 
     // constructor - to update (exceptions)
     public Star(String name, String catalogName, Declination declination, RightAscension rightAscension,
@@ -83,6 +93,106 @@ public class Star {
     }
 
 
+    // method that creates star's catalog name based on it's constellation
+    /*
+        nazwa katalogowa – nazwa katalogowa składa się litery alfabetu
+        greckiego oraz nazwy gwiazdozbioru. Najjaśniejsza gwiazda w
+        gwiazdozbiorze oznaczana jest jako alfa, kolejna jako beta i tak
+        dalej. Na potrzeby projektu zakładamy, iż kolejne litery greckie
+        nadawane są gwiazdom w takiej kolejności, w jakiej dodane zostały
+        do gwiazdozbioru. np gamma Wolarza
+     */
+    private String createCatalogName(Constellation constellation)
+    {
+        String name = constellation.getName();
+        int count = constellationStarCount.getOrDefault(name,0); // 0 if theres no stars in a contellation
+
+        if (count >= GreekAlphabet.values().length)
+        {
+            throw new IllegalStateException("Limit of stars in a constellation has been reached!");
+            //since theres 24? letters in greek alphabet there cant be more stars names after that
+        }
+
+        // naming a star
+        String greekLetter = GreekAlphabet.values()[count].name();
+        constellationStarCount.put(name, count+1);
+        return greekLetter + " " + name;
+    }
 
 
+    // method that updates stars names +numbers of stars in a constellation after a star was deleted
+    /* 
+     W przypadku usunięcia np. gwiazdy beta w danym gwiazdozbiorze, należy
+     zadbać, o to, aby wszystkie pozostałe nazwy katalogowe zostały
+     uaktualnione. Np. po usunięciu gwiazdy alfa Ryb, wszystkie pozostałe
+     gwiazdy w gwiazdozbiorze są aktualizowane, tj. beta Ryb na alfa Ryb,
+     gamma Ryb na beta Ryb i tak dalej.
+     */
+    private static void updateCatalog(Constellation constellation, List<Star> starList)
+    {
+        List<Star> stars = new ArrayList<>(); //list of stars from a particular constellation
+
+        for(Star star: starList)
+        {
+            if (star.constellation.getName().equals(constellation.getName()))
+            {
+                stars.add(star);
+            }
+        }
+
+        stars.sort(Comparator.comparingInt(star -> 
+        {
+            String greekName = star.catalogName.split(" ")[0]; 
+            //sorting by greekletters (their index in GreekAlphabet)
+            return Arrays.asList(GreekAlphabet.values()).indexOf(GreekAlphabet.valueOf(greekName));
+        }
+        ));
+
+        // new names
+        for (int i=0; i < stars.size(); i++)
+        {
+            stars.get(i).catalogName = GreekAlphabet.values()[i].name()+ " " +constellation.getName();    
+        }
+
+        // updating numbers of stars in a catalog
+        constellationStarCount.put(constellation.getName(), stars.size());
+    }
+
+    // method that deletes a star 
+    public static void removeStar(String name, List<Star> starList)
+    {
+        Star starRemove = null; 
+        
+        for (Star star : starList)
+        {
+            if (star.catalogName.equals(name))
+            {
+                starRemove = star; //if the star's name has been found in starList 
+                                  //it's marked as a star that will be removed
+                break;
+            }
+        }
+
+        //a marked star is getting removed
+        if (starRemove != null)
+        {
+            starList.remove(starRemove);
+            updateCatalog(starRemove.constellation, starList);
+        }
+    }
+
+    // method that finds supernovas (if there are any) and returns a list of them
+    public static List<Star> Supernovas(List<Star> starsList)
+    {
+        List<Star> supernovas = new ArrayList<>();
+
+        for (Star star : starsList)
+        {
+            if (star.mass > 1.44)
+            {
+                supernovas.add(star);
+            }
+        }
+        return supernovas;
+    }
 }
