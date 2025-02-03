@@ -46,7 +46,7 @@ public class Star implements Serializable {
         }
         this.name = name;
         // !!! TO DO: validate catalogName -> 1 greek letter + constellation name which it was added to
-        this.catalogName = createCatalogName(constellation);
+        this.catalogName = createCatalogName(constellation); 
         this.declination = declination;
         this.rightAscension = rightAscension;
         // validate apparentMagnitude
@@ -214,4 +214,45 @@ public class Star implements Serializable {
         }
         return supernovas;
     }
+
+
+    // method that prints all existing stars with their attributes
+    /*
+     Oprócz dodania nowej gwiazdy możemy również wyświetlić wszystkie
+     gwiazdy w bazie,
+     */
+    public static void viewStars() 
+    {
+        File folder = new File(STARS_FOLDER);
+        File[] files = folder.listFiles();
+    
+        if (files == null || files.length == 0) 
+        {
+            System.out.println("There are no stars in database");
+            return;
+        }
+    
+        for (File file : files) 
+        {
+            // removing .obj to get constellation's name
+            List<Star> stars = loadStarsFromFile(file.getName().replace(".obj", ""));
+            for (Star star : stars) 
+            {
+                System.out.println("-------------------------");
+                System.out.println("Name: " + star.name);
+                System.out.println("Catalog name: " + star.catalogName);
+                System.out.println("Declination: " + star.declination.getXX() + "° " + star.declination.getYY() + "' " + star.declination.getZZ() + "''");
+                System.out.println("Right ascention: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Apparent magnitude: " + star.apparentMagnitude);
+                System.out.println("Absolute magnitude: " + star.absoluteMagnitude);
+                System.out.println("Distance: " + star.distance);
+                System.out.println("Constellation: " + star.constellation.getName());
+                System.out.println("Hemisphere: " + star.hemisphere);
+                System.out.println("Temperature: " + star.temperature + "°C");
+                System.out.println("Mass: " + star.mass + " mas Słońca");
+                System.out.println("-------------------------\n");
+            }
+        }
+    }
+    
 }
