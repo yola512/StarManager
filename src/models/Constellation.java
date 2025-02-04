@@ -1,6 +1,8 @@
 package src.models;
 
-public class Constellation {
+import java.io.Serializable;
+
+public class Constellation implements Serializable {
     private String name;
 
     // constructor

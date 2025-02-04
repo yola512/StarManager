@@ -1,12 +1,14 @@
 package src.models;
 
-public class RightAscension {
+import java.io.Serializable;
+
+public class RightAscension implements Serializable {
     private int xx;
     private int yy;
-    private int zz;
+    private double zz;
 
     // constructor
-    public RightAscension(int xx, int yy, int zz) {
+    public RightAscension(int xx, int yy, double zz) {
         // xx - hours
         if (xx < 0 || xx > 24) {
             throw new IllegalArgumentException("Hours must be values between 0 and 24");
@@ -36,11 +38,16 @@ public class RightAscension {
     }
 
     // zz - seconds
-    public int getZZ() {
+    public double getZZ() {
         return zz;
     }
 
     // didn't use setters in RightAscension/Declination classes bc Star coordinates change in 26000 years
     // due to precession; coordinates changes are insignificant
 
+    // toString()
+    @Override
+    public String toString() {
+        return String.format("%02dh %dm %fs", getXX(), getYY(), getZZ());
+    }
 }
