@@ -24,13 +24,14 @@ public class Main {
             System.out.println("2. Display Stars in selected Constellation");
             System.out.println("3. Add a new Star");
             System.out.println("4. Remove a Star");
-            System.out.println("5. Filter stars by distance from Earth");
-            System.out.println("6. Find Stars by temperature");
-            System.out.println("7. Find Stars by absolute magnitude");
-            System.out.println("8. Search for stars in a selected hemisphere");
-            System.out.println("9. Find Supernovas");
-            System.out.println("10. Save a Star to file");
-            System.out.println("11. Exit program");
+            System.out.println("5. Display star coordinates");
+            System.out.println("6. Filter stars by distance from Earth");
+            System.out.println("7. Find Stars by temperature");
+            System.out.println("8. Find Stars by absolute magnitude");
+            System.out.println("9. Search for stars in a selected hemisphere");
+            System.out.println("10. Find Supernovas");
+            System.out.println("11. Save a Star to file");
+            System.out.println("12. Exit program");
 
             System.out.println("\nChoose an option: ");
             int choice = scanner.nextInt();
@@ -49,6 +50,11 @@ public class Main {
                     // Name
                     System.out.println("Enter Star's name (3 uppercase letters and 4 digits):");
                     String name = scanner.nextLine();
+
+                    // Hemisphere (enum)
+                    System.out.println("Enter hemisphere:");
+                    String hemisphereAbbr = scanner.nextLine();
+                    Hemisphere hemisphere = Hemisphere.fromString(hemisphereAbbr);
 
                     // Declination
                     System.out.println("Enter Star's declination: ");
@@ -70,6 +76,11 @@ public class Main {
                     double seconds = scanner.nextDouble();
                     RightAscension rightAscension = new RightAscension(degrees, minutes, seconds);
 
+                    // Constellation
+                    System.out.println("Enter constellation:");
+                    String constellationName = scanner.nextLine();
+                    Constellation constellation = new Constellation(constellationName);
+
                     // Apparent Magnitude
                     System.out.println("Enter Star's apparent magnitude <-26.74; 15.00>:");
                     double apparentMagnitude = scanner.nextDouble();
@@ -80,16 +91,6 @@ public class Main {
 
                     scanner.nextLine();
 
-                    // Constellation
-                    System.out.println("Enter constellation:");
-                    String constellationName = scanner.nextLine();
-                    Constellation constellation = new Constellation(constellationName);
-
-                    // Hemisphere (enum)
-                    System.out.println("Enter hemisphere:");
-                    String hemisphereAbbr = scanner.nextLine();
-                    Hemisphere hemisphere = Hemisphere.fromString(hemisphereAbbr);
-
                     // Temperature
                     System.out.println("Enter Star's temperature in °C:");
                     double temperature = scanner.nextDouble();
@@ -99,23 +100,22 @@ public class Main {
                     double mass = scanner.nextDouble();
 
                     try {
-                        Star star = new Star(name, declination, rightAscension, apparentMagnitude, distance, constellation,
-                                hemisphere, temperature, mass);
+                        Star star = new Star(name, hemisphere, declination, rightAscension, constellation, apparentMagnitude, distance, temperature, mass);
                         System.out.println("\nSTAR HAS BEEN CREATED :)");
                         System.out.println("\nSTAR INFO:");
                         System.out.println("* Name: " + star.getName());
                         System.out.println("* Catalog name: " + star.getCatalogName());
+                        System.out.println("* Hemisphere: " + star.getHemisphere());
                         System.out.println("* Declination: " + star.getDeclination());
                         System.out.println("* Right ascension: " + star.getRightAscension());
+                        System.out.println("* Constellation: " + star.getConstellation());
                         System.out.println("* Apparent magnitude: " + star.getApparentMagnitude());
                         System.out.println("* Absolute magnitude: " + star.getAbsoluteMagnitude());
                         System.out.println("* Distance: " + star.getDistance() + " light years");
-                        System.out.println("* Constellation: " + star.getConstellation());
-                        System.out.println("* Hemisphere: " + star.getHemisphere());
                         System.out.println("* Temperature: " + star.getTemperature() + "°C");
                         System.out.println("* Mass: " + star.getMass() + " solar mass");
 
-                        System.out.println("\n!!! DON'T FORGET TO SAVE YOUR STAR TO FILE !!! (10. in menu :)) ");
+                        System.out.println("\n!!! DON'T FORGET TO SAVE YOUR STAR TO FILE !!! (11. in menu :)) ");
                     } catch (IllegalArgumentException e) {
                         System.out.println("Error occurred: " + e.getMessage());
                     }
@@ -127,12 +127,17 @@ public class Main {
                     removeStar(catalogName);
                     break;
                 case 5:
+                    System.out.println("Enter name of the star: ");
+                    String name1 = scanner.nextLine();
+                    getStarCoordinates(name1);
+                    break;
+                case 6:
                     System.out.println("\nEnter distance from Earth (in parsecs, up to 2 spaces after coma): ");
                     double distanceParsecs = scanner.nextDouble();
                     System.out.println("\nFound stars in chosen distance: ");
                     findStarByDistance(distanceParsecs);
                     break;
-                case 6:
+                case 7:
                     System.out.println("\nEnter min temperature: ");
                     double minTemp = scanner.nextDouble();
                     System.out.println("Enter max temperature: ");
@@ -140,7 +145,7 @@ public class Main {
                     System.out.println("\nFound stars in chosen temperature interval: ");
                     findStarByTemperature(minTemp, maxTemp);
                     break;
-                case 7:
+                case 8:
                     System.out.println("\nEnter min absolute magnitude: ");
                     double minMag = scanner.nextDouble();
                     System.out.println("Enter max absolute magnitude: ");
@@ -148,17 +153,17 @@ public class Main {
                     System.out.println("\nFound stars in chosen absolute magnitude interval: ");
                     findStarByMagnitude(minMag, maxMag);
                     break;
-                case 8:
+                case 9:
                     System.out.println("\nEnter hemisphere: ");
                     String hemisphereName = scanner.nextLine();
                     System.out.println("\nFound stars in chosen hemisphere: ");
                     findStarByHemisphere(hemisphereName);
                     break;
-                case 9:
+                case 10:
                     System.out.println("\nFound supernovas: ");
                     findSupernovas();
                     break;
-                case 10:
+                case 11:
                     System.out.println("\nWhich Star would you like to save? (enter Star's name): ");
                     String sName = scanner.nextLine();
 
@@ -179,7 +184,7 @@ public class Main {
                     }
 
                     break;
-                case 11:
+                case 12:
                     System.out.println("\nSee you soon!");
                     System.out.println("\nExiting StarManager...");
                     scanner.close();

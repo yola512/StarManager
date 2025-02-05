@@ -10,9 +10,9 @@ public class Declination implements Serializable {
    // constructor
    public Declination(int xx, int yy, double zz) {
        // xx - degrees (angles)
-       if (xx < 0 || xx > 90)
+       if (xx < -90 || xx > 90)
        {
-           throw new IllegalArgumentException("Degrees must be values between 0 and 90");
+           throw new IllegalArgumentException("Degrees must be values between -90 and 90");
        }
        this.xx = xx;
        // yy - minutes

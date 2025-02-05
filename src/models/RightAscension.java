@@ -48,6 +48,6 @@ public class RightAscension implements Serializable {
     // toString()
     @Override
     public String toString() {
-        return String.format("%02dh %dm %fs", getXX(), getYY(), getZZ());
+        return String.format("%02dh %dm %.2fs", getXX(), getYY(), getZZ());
     }
 }

@@ -22,53 +22,64 @@ public class Star implements Serializable {
 
     private String name;
     private String catalogName;
+    private Hemisphere hemisphere;
     private Declination declination;
     private RightAscension rightAscension;
     private double apparentMagnitude;
     private double absoluteMagnitude;
     private double distance; // in light years
     private Constellation constellation;
-    private Hemisphere hemisphere;
     private double temperature;
     private double mass;
 
-    // catalogs that will contain any stars and constellatons created
+    // catalog that will contain stars
     private static final String STARS_FOLDER = "src/data/stars/";
-    private static final String CONSTELLATIONS_FOLDER = "src/data/constellations/";
 
     // Constructor - to update (exceptions)
-    public Star(String name, Declination declination, RightAscension rightAscension,
-                double apparentMagnitude, double distance, Constellation constellation, Hemisphere hemisphere,
+    public Star(String name, Hemisphere hemisphere, Declination declination, RightAscension rightAscension,
+                Constellation constellation, double apparentMagnitude, double distance,
                 double temperature, double mass) {
-        // validate name
         if (!name.matches("[A-Z]{3}[0-9]{4}")) {
             throw new IllegalArgumentException("Name must contain 3 uppercase letters and 4 digits");
         }
-        this.name = name;
-        this.declination = declination;
-        this.rightAscension = rightAscension;
-        // validate apparentMagnitude
+        // validate other required fields
+        if (hemisphere == null) {
+            throw new IllegalArgumentException("Hemisphere cannot be null.");
+        }
+        if (declination == null) {
+            throw new IllegalArgumentException("Declination cannot be null.");
+        }
+        if (rightAscension == null) {
+            throw new IllegalArgumentException("Right Ascension cannot be null.");
+        }
+        if (constellation == null) {
+            throw new IllegalArgumentException("Constellation cannot be null.");
+        }
+
+        // assign hemisphere before validating declination
+        this.hemisphere = hemisphere;
+        validateDeclination(declination); // validate declination based on hemisphere
+
         if (apparentMagnitude < -26.74 || apparentMagnitude > 15.00) {
             throw new IllegalArgumentException("Apparent magnitude must be between -26.74 and 15.00");
         }
-        this.apparentMagnitude = apparentMagnitude;
-        // validate distance
         if (distance <= 0) {
             throw new IllegalArgumentException("Distance must be greater than 0");
         }
-        this.distance = distance;
-        this.constellation = constellation;
-        // validate hemisphere using fromString
-        this.hemisphere = hemisphere;
-        // validate temperature
         if (temperature < 2000) {
             throw new IllegalArgumentException("Temperature must be at least 2000 degrees Celsius");
         }
-        this.temperature = temperature;
-        // validate mass
         if (mass < 0.1 || mass > 50) {
             throw new IllegalArgumentException("Mass must be min. 0.1 to max. 50 solar masses");
         }
+
+        this.name = name;
+        this.declination = declination;
+        this.rightAscension = rightAscension;
+        this.constellation = constellation;
+        this.apparentMagnitude = apparentMagnitude;
+        this.distance = distance;
+        this.temperature = temperature;
         this.mass = mass;
 
         // calculate values not provided in constructor
@@ -133,19 +144,25 @@ public class Star implements Serializable {
     }
 
 
+    // Method for validating declination based on hemisphere
+    private void validateDeclination(Declination declination) {
+        int degrees = declination.getXX();
 
-    // Star coordinates
-    public String getStarCoordinates() {
-        return String.format(
-                "1. Declination: %d° %d' %.2f''%n2. Right ascension: %02d h %d m %f s",
-                declination.getXX(),
-                declination.getYY(),
-                declination.getZZ(),
-                rightAscension.getXX(),
-                rightAscension.getYY(),
-                rightAscension.getZZ()
-        );
+        if (hemisphere == Hemisphere.NORTHERN) {
+            if (degrees < 0 || degrees > 90) {
+                throw new IllegalArgumentException("For the Northern Hemisphere, declination must be between 0° and 90°.");
+            }
+        }
+        else if (hemisphere == Hemisphere.SOUTHERN) {
+            if (degrees < -90 || degrees > 0) {
+                throw new IllegalArgumentException("For the Southern Hemisphere, declination must be between -90° and 0°.");
+            }
+        }
+        else {
+            throw new IllegalArgumentException("Invalid hemisphere");
+        }
     }
+
 
     // Method: Calculate Absolute Magnitude
     public double calculateAbsoluteMagnitude(double apparentMagnitude, double distance) {
@@ -339,7 +356,7 @@ public class Star implements Serializable {
             }
         }
         catch (IllegalArgumentException e) {
-            System.out.println("Invalid temperature input. " + e.getMessage());
+            System.out.println("Invalid distance input. " + e.getMessage());
         }
     }
 
@@ -431,6 +448,30 @@ public class Star implements Serializable {
         }
 
     }
+
+    // Star coordinates - not necessary but wanted to add it
+    public static void getStarCoordinates(String name) {
+        List<Star> allStars = loadStarsFromFile();
+        boolean foundStar = false;
+
+        try {
+            for (Star star : allStars)
+            {
+                if (star.getName().equalsIgnoreCase(name))
+                {
+                    foundStar = true;
+                    System.out.println("* Star Name: " + star.getName() + ";" + " 1. Declination: " + star.getDeclination() + " 2. Right ascension: " + star.getRightAscension());
+                }
+            }
+            if (!foundStar) {
+                System.out.println("No stars of this name found ;(.");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Incorrect star name " + e.getMessage());
+        }
+    }
+
     // METHODS FOR DISPLAYING STARS
     // method that prints all existing stars with their attributes
     /*
@@ -450,13 +491,13 @@ public class Star implements Serializable {
                 System.out.println("-------------------------");
                 System.out.println("Name: " + star.name);
                 System.out.println("Catalog name: " + star.catalogName);
+                System.out.println("Hemisphere: " + star.hemisphere);
                 System.out.println("Declination: " + star.declination.getXX() + "° " + star.declination.getYY() + "' " + star.declination.getZZ() + "''");
                 System.out.println("Right ascension: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Constellation: " + star.constellation.getName());
                 System.out.println("Apparent magnitude: " + star.apparentMagnitude);
                 System.out.println("Absolute magnitude: " + star.absoluteMagnitude);
                 System.out.println("Distance: " + star.distance + " light years");
-                System.out.println("Constellation: " + star.constellation.getName());
-                System.out.println("Hemisphere: " + star.hemisphere);
                 System.out.println("Temperature: " + star.temperature + "°C");
                 System.out.println("Mass: " + star.mass + " solar mass");
                 System.out.println("-------------------------\n");
@@ -476,13 +517,14 @@ public class Star implements Serializable {
                 System.out.println("-------------------------");
                 System.out.println("Name: " + star.name);
                 System.out.println("Catalog name: " + star.catalogName);
+                System.out.println("Hemisphere: " + star.hemisphere);
                 System.out.println("Declination: " + star.declination.getXX() + "° " + star.declination.getYY() + "' " + star.declination.getZZ() + "''");
                 System.out.println("Right ascension: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Constellation: " + star.constellation.getName());
                 System.out.println("Apparent magnitude: " + star.apparentMagnitude);
                 System.out.println("Absolute magnitude: " + star.absoluteMagnitude);
                 System.out.println("Distance: " + star.distance + " light years");
                 System.out.println("Constellation: " + star.constellation.getName());
-                System.out.println("Hemisphere: " + star.hemisphere);
                 System.out.println("Temperature: " + star.temperature + "°C");
                 System.out.println("Mass: " + star.mass + " solar mass");
                 System.out.println("-------------------------\n");
