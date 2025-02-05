@@ -1,7 +1,6 @@
 package src;
 
 import src.models.*;
-import src.models.Constellation;
 import src.utils.Hemisphere;
 
 import java.util.ArrayList;
@@ -14,6 +13,7 @@ import static src.models.Star.*;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        initializeStarCountMap();
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -78,6 +78,7 @@ public class Main {
 
                     // Constellation
                     System.out.println("Enter constellation:");
+                    scanner.nextLine();
                     String constellationName = scanner.nextLine();
                     Constellation constellation = new Constellation(constellationName);
 
@@ -114,6 +115,8 @@ public class Main {
                         System.out.println("* Distance: " + star.getDistance() + " light years");
                         System.out.println("* Temperature: " + star.getTemperature() + "°C");
                         System.out.println("* Mass: " + star.getMass() + " solar mass");
+
+                        initializeStarCountMap();
 
                         System.out.println("\n!!! DON'T FORGET TO SAVE YOUR STAR TO FILE !!! (11. in menu :)) ");
                     } catch (IllegalArgumentException e) {

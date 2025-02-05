@@ -13,7 +13,9 @@ import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class Star implements Serializable {
@@ -31,6 +33,8 @@ public class Star implements Serializable {
     private Constellation constellation;
     private double temperature;
     private double mass;
+
+    private static final Map<String, Integer> starsInAConstellation = new HashMap<>(); 
 
     // catalog that will contain stars
     private static final String STARS_FOLDER = "src/data/stars/";
@@ -87,7 +91,7 @@ public class Star implements Serializable {
         this.absoluteMagnitude = calculateAbsoluteMagnitude(apparentMagnitude, distance);
 
         saveStar(); // after creating a star it will get saved to the catalog
-        updateCatalog(constellation);
+        //updateCatalog(constellation);
     }
 
 
@@ -187,16 +191,7 @@ public class Star implements Serializable {
      */
     private String createCatalogName(Constellation constellation)
     {
-        List<Star> allStars = loadStarsFromFile();
-        List<Star> starsInConstellation = new ArrayList<>();
-
-        // find stars only from constellation
-        for (Star star : allStars) {
-            if (star.getConstellation2().equals(constellation)) {
-                starsInConstellation.add(star);
-            }
-        }
-        int count = starsInConstellation.size();
+        int count = starsInAConstellation.getOrDefault(constellation.getName(), 0);  
 
         if (count >= GreekAlphabet.values().length)
         {
@@ -204,6 +199,7 @@ public class Star implements Serializable {
             //since theres 24? letters in greek alphabet there cant be more stars names after that
         }
         String greekLetter = GreekAlphabet.values()[count].name();
+        starsInAConstellation.put(constellation.getName(), count + 1);
         return greekLetter + " " + constellation.getName();
     }
 
@@ -250,22 +246,30 @@ public class Star implements Serializable {
     private static void updateCatalog(Constellation constellation)
     {
         List<Star> stars = loadStarsFromFile();
-        // load all stars from specific constellation
+        // load all stars from specific constellation4
         List<Star> starsInConstellation = new ArrayList<>();
+
         for (Star star : stars) {
             if (star.getConstellation2().equals(constellation)) {
                 starsInConstellation.add(star);
+                System.out.println("Added star: " + star.getCatalogName());
             }
         }
 
         // sorted stars
-        starsInConstellation.sort(Comparator.comparingInt(star -> Arrays.asList(GreekAlphabet.values())
-                .indexOf(GreekAlphabet.valueOf(star.catalogName.split(" ")[0]))));
+        starsInConstellation.sort(Comparator.comparingInt(star -> 
+        Arrays.asList(GreekAlphabet.values()).indexOf(
+            GreekAlphabet.valueOf(star.catalogName.split(" ")[0]))
+            ));
         // updated names
-        for (int i = 0; i < starsInConstellation.size(); i++) {
-            starsInConstellation.get(i).catalogName = GreekAlphabet.values()[i].name() + " " + constellation.getName();
-            saveStarToFile(starsInConstellation.get(i));
+        for (int i = 0; i < starsInConstellation.size(); i++) 
+        {
+            Star updatedStar = starsInConstellation.get(i);
+            updatedStar.catalogName = GreekAlphabet.values()[i].name() + " " + constellation.getName();
+            saveStarToFile(updatedStar);  
+            System.out.println("Updated catalog name: " + updatedStar.catalogName); 
         }
+        starsInAConstellation.put(constellation.getName(), starsInConstellation.size());
     }
 
     // method that helps with updating catalog
@@ -287,6 +291,13 @@ public class Star implements Serializable {
         catch (IOException e) {
             System.err.println("Error: Couldn't save star to file: " + filePath);
             e.printStackTrace();
+        }
+    }
+
+    private static void saveStarsToFile(List<Star> stars) {
+        // This function will save the updated list of stars to the file
+        for (Star star : stars) {
+            saveStarToFile(star);  // Re-save each star from the updated list
         }
     }
 
@@ -325,14 +336,19 @@ public class Star implements Serializable {
                 System.err.println("Error: Could not delete file " + filePath);
             }
 
-            // update catalog (renaming other stars)
-            updateCatalog(starToRemove.getConstellation2());
+            saveStarsToFile(stars);
+            Constellation constellation = starToRemove.getConstellation2();
+            // updating number of stars in a constellation (starsInConstellation map)
+            starsInAConstellation.put(constellation.getName(), stars.size());     
+            // updating names of all stars in a constellation
+            updateCatalog(constellation);
             System.out.println("Star has been removed from catalog.");
         }
 
         else {
             System.out.println("Error: Star not found in catalog.");
         }
+
     }
 
     // METHODS FOR SEARCHING STARS BASED ON CRITERIAS
@@ -532,6 +548,19 @@ public class Star implements Serializable {
         }
         if (!foundStars) {
             System.out.println("No stars in this constellation have been found ;(");
+        }   
+    }
+
+    public static void initializeStarCountMap()  
+    {
+        List<Star> stars = loadStarsFromFile();
+        starsInAConstellation.clear(); 
+    
+        for (Star star : stars) 
+        {
+            String constellationName = star.getConstellation2().getName();
+            starsInAConstellation.put(constellationName,
+            starsInAConstellation.getOrDefault(constellationName, 0) + 1);
         }
     }
 }
