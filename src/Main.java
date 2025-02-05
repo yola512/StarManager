@@ -84,7 +84,7 @@ public class Main {
 
                     // Declination
                     System.out.println("Enter Star's declination: ");
-                    System.out.println("1) Degrees: (N: <0; 90>, S: <-90; 0) ");
+                    System.out.println("1) Degrees: (N: <0; 90>, S: <-90; 0>) ");
                     int xx = scanner.nextInt();
                     if (hemisphere == Hemisphere.NORTHERN && (xx < 0 || xx > 90)) 
                     {
