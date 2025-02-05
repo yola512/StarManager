@@ -211,7 +211,7 @@ public class Star implements Serializable {
 
         // check if directory exists
         if (!directory.exists() || !directory.isDirectory()) {
-            System.err.println("Star directory not found: " + STARS_FOLDER);
+           // System.err.println("Star directory not found: " + STARS_FOLDER);
             return allStars; // returns empty list if dir doesn't exist
         }
 
@@ -296,7 +296,12 @@ public class Star implements Serializable {
         // check if directory exists, otherwise -> create one
         File directory = new File(STARS_FOLDER);
         if (!directory.exists()) {
-            System.err.println("Error: Could not create directory " + STARS_FOLDER);
+            if (directory.mkdirs()) // creating folders if they dont exist
+            {  System.out.println("Directory created: " + STARS_FOLDER); }
+            else
+            {     
+                System.err.println("Error: Could not create directory " + STARS_FOLDER);
+            }
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) 
