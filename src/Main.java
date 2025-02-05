@@ -2,8 +2,6 @@ package src;
 
 import src.models.*;
 import src.utils.Hemisphere;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -51,29 +49,76 @@ public class Main {
                     System.out.println("Enter Star's name (3 uppercase letters and 4 digits):");
                     String name = scanner.nextLine();
 
+                        if (!name.matches("[A-Z]{3}[0-9]{4}")) 
+                        {
+                            throw new IllegalArgumentException("Invalid star name format.");
+                        }
+                        
+                    // checking if a star with that name already exist
+                    List<Star> existingStars = Star.loadStarsFromFile();
+                    boolean starExists = false;
+                    for (Star star : existingStars)
+                    {
+                        if (star.getName().equals(name)) 
+                        {
+                            starExists = true;
+                            break;
+                        }
+                    }
+                    if (starExists) 
+                    {
+                        throw new IllegalArgumentException("A star with this name already exists! Please choose a different name.");
+                    }
+                
                     // Hemisphere (enum)
-                    System.out.println("Enter hemisphere:");
+                    System.out.println("Enter hemisphere: <N/S>");
                     String hemisphereAbbr = scanner.nextLine();
                     Hemisphere hemisphere = Hemisphere.fromString(hemisphereAbbr);
+                    if (hemisphere == null) {
+                        throw new IllegalArgumentException("Invalid hemisphere. Choose <N> or <S>.");
+                    }
 
                     // Declination
                     System.out.println("Enter Star's declination: ");
-                    System.out.println("1) Degrees: ");
+                    System.out.println("1) Degrees: (N: <0; 90>, S: <-90; 0) ");
                     int xx = scanner.nextInt();
-                    System.out.println("2) Minutes: ");
+                    if (hemisphere == Hemisphere.NORTHERN && (xx < 0 || xx > 90)) 
+                    {
+                        throw new IllegalArgumentException("For Northern Hemisphere, degrees must be between 0 and 90");
+                    }
+                    else if (hemisphere == Hemisphere.SOUTHERN && (xx < -90 || xx > 0))
+                    {
+                        throw new IllegalArgumentException("For Southern Hemisphere, degrees must be between -90 and 0.");
+                    }
+                    System.out.println("2) Minutes: <00; 60>");
                     int yy = scanner.nextInt();
-                    System.out.println("3) Seconds: ");
+                    if (yy < 0 || yy > 60) 
+                    {
+                        throw new IllegalArgumentException("Minutes must be between 0 and 60.");
+                    }
+
+                    System.out.println("3) Seconds: <00; 60>");
                     double zz = scanner.nextDouble();
+                    if (zz < 0 || zz > 60) 
+                    {
+                        throw new IllegalArgumentException("Seconds must be between 0 and 60.");
+                    }
+                    
                     Declination declination = new Declination(xx, yy, zz);
 
                     // Right Ascension
                     System.out.println("Enter Star's right ascension: ");
-                    System.out.println("1) Hours: ");
+                    System.out.println("1) Hours: <00; 24>");
                     int degrees = scanner.nextInt();
-                    System.out.println("2) Minutes: ");
+                    System.out.println("2) Minutes: <00; 60>");
                     int minutes = scanner.nextInt();
-                    System.out.println("3) Seconds: ");
+                    System.out.println("3) Seconds: <00; 60>");
                     double seconds = scanner.nextDouble();
+                    if (degrees < 0 || degrees >= 24 || minutes < 0 || minutes >= 60 ||
+                    seconds < 0 || seconds >= 60) 
+                    {
+                         throw new IllegalArgumentException("Invalid right ascension values.");
+                    }        
                     RightAscension rightAscension = new RightAscension(degrees, minutes, seconds);
 
                     // Constellation
@@ -85,6 +130,10 @@ public class Main {
                     // Apparent Magnitude
                     System.out.println("Enter Star's apparent magnitude <-26.74; 15.00>:");
                     double apparentMagnitude = scanner.nextDouble();
+                    if (apparentMagnitude < -26.74 || apparentMagnitude > 15.00) 
+                    {
+                        throw new IllegalArgumentException("Invalid apparent magnitude.");
+                    }
 
                     // Distance in light years
                     System.out.println("Enter Star's distance (in light years):");
@@ -93,12 +142,21 @@ public class Main {
                     scanner.nextLine();
 
                     // Temperature
-                    System.out.println("Enter Star's temperature in °C:");
+                    System.out.println("Enter Star's temperature in °C: (min 2000)");
                     double temperature = scanner.nextDouble();
+                    if (temperature < 2000) 
+                    {
+                        throw new IllegalArgumentException("Temperature must be at least 2000°C.");
+                    }
 
                     // Mass
                     System.out.println("Enter Star's mass (relative to solar mass, e.g 1.3) <0.1; 50>:");
                     double mass = scanner.nextDouble();
+                    if (mass < 0.1 || mass > 50) 
+                    {
+                        throw new IllegalArgumentException("Mass must be between 0.1 and 50 solar masses.");
+                    }
+              
 
                     try {
                         Star star = new Star(name, hemisphere, declination, rightAscension, constellation, apparentMagnitude, distance, temperature, mass);
@@ -119,10 +177,14 @@ public class Main {
                         initializeStarCountMap();
 
                         System.out.println("\n!!! DON'T FORGET TO SAVE YOUR STAR TO FILE !!! (11. in menu :)) ");
-                    } catch (IllegalArgumentException e) {
+                    } 
+                    catch (IllegalArgumentException e) 
+                    {
                         System.out.println("Error occurred: " + e.getMessage());
                     }
+                     
                     break;
+                
 
                 case 4:
                     System.out.println("Enter catalog name of the star you want to remove: ");

@@ -34,6 +34,7 @@ public class Star implements Serializable {
     private double temperature;
     private double mass;
 
+    // hashmap to store numbers of stars in a constellations
     private static final Map<String, Integer> starsInAConstellation = new HashMap<>(); 
 
     // catalog that will contain stars
@@ -91,7 +92,6 @@ public class Star implements Serializable {
         this.absoluteMagnitude = calculateAbsoluteMagnitude(apparentMagnitude, distance);
 
         saveStar(); // after creating a star it will get saved to the catalog
-        //updateCatalog(constellation);
     }
 
 
@@ -229,6 +229,9 @@ public class Star implements Serializable {
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error loading stars from file: " + file.getName());
                 e.printStackTrace();
+            } catch (Exception e) {
+                System.err.println("Unexpected error: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -252,22 +255,34 @@ public class Star implements Serializable {
         for (Star star : stars) {
             if (star.getConstellation2().equals(constellation)) {
                 starsInConstellation.add(star);
-                System.out.println("Added star: " + star.getCatalogName());
+               // System.out.println("Added star: " + star.getCatalogName()); // for debugging
             }
         }
 
         // sorted stars
+        try {
         starsInConstellation.sort(Comparator.comparingInt(star -> 
         Arrays.asList(GreekAlphabet.values()).indexOf(
             GreekAlphabet.valueOf(star.catalogName.split(" ")[0]))
             ));
         // updated names
+        } catch (IllegalArgumentException e) {
+        System.err.println("Error during sorting the stars: " + e.getMessage());
+        return;
+        }
+
         for (int i = 0; i < starsInConstellation.size(); i++) 
         {
             Star updatedStar = starsInConstellation.get(i);
             updatedStar.catalogName = GreekAlphabet.values()[i].name() + " " + constellation.getName();
-            saveStarToFile(updatedStar);  
-            System.out.println("Updated catalog name: " + updatedStar.catalogName); 
+            try {
+                saveStarToFile(updatedStar);
+            } catch (Exception e) {
+                System.err.println("Error saving updated star: " + updatedStar.getCatalogName());
+                e.printStackTrace();
+            }  
+            System.out.println("Updated catalog name of " + updatedStar.getName() + " to: " 
+            + updatedStar.catalogName); 
         }
         starsInAConstellation.put(constellation.getName(), starsInConstellation.size());
     }
@@ -284,11 +299,13 @@ public class Star implements Serializable {
             System.err.println("Error: Could not create directory " + STARS_FOLDER);
         }
 
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) 
+        {
             oos.writeObject(star);
-            System.out.println("Star saved to: " + filePath);
+            //System.out.println("Star saved to: " + filePath); // for debugging
         }
-        catch (IOException e) {
+        catch (IOException e) 
+        {
             System.err.println("Error: Couldn't save star to file: " + filePath);
             e.printStackTrace();
         }
@@ -330,10 +347,19 @@ public class Star implements Serializable {
             // delete file associated with the star
             String filePath = STARS_FOLDER + starToRemove.getName() + ".obj";
             File file = new File(filePath);
-            if (file.exists() && file.delete()) {
-                System.out.println("Star file deleted: " + filePath);
-            } else {
-                System.err.println("Error: Could not delete file " + filePath);
+
+            try {
+                if (file.exists() && file.delete()) 
+                {
+                    System.out.println("Star file deleted: " + filePath);
+                } 
+                else
+                {
+                    throw new IOException("Failed to delete file: " + filePath);
+                }
+            } catch (IOException e) {
+            System.err.println("Error: Could not delete file " + filePath);
+            e.printStackTrace();
             }
 
             saveStarsToFile(stars);
@@ -374,6 +400,9 @@ public class Star implements Serializable {
         catch (IllegalArgumentException e) {
             System.out.println("Invalid distance input. " + e.getMessage());
         }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
+        }
     }
 
     // Method that finds stars based on temperature (in chosen interval)
@@ -395,6 +424,9 @@ public class Star implements Serializable {
         catch (IllegalArgumentException e) {
             System.out.println("Invalid temperature input. " + e.getMessage());
         }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
+        }
     }
 
     // Method that finds stars based on absolute magnitude (in chosen interval)
@@ -414,6 +446,9 @@ public class Star implements Serializable {
         }
         catch (IllegalArgumentException e) {
             System.out.println("Invalid magnitude input. " + e.getMessage());
+        }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
         }
     }
     // Method that finds stars based on hemisphere
@@ -437,6 +472,9 @@ public class Star implements Serializable {
         }
         catch (IllegalArgumentException e) {
             System.out.println("Invalid hemisphere input. " + e.getMessage());
+        }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
         }
     }
 
@@ -462,6 +500,9 @@ public class Star implements Serializable {
         catch (IllegalArgumentException e) {
             System.out.println("Invalid mass input. " + e.getMessage());
         }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
+        }
 
     }
 
@@ -485,6 +526,9 @@ public class Star implements Serializable {
         }
         catch (IllegalArgumentException e) {
             System.out.println("Incorrect star name " + e.getMessage());
+        }
+        catch (Exception e) {
+            System.err.println("Error during star search by distance: " + e.getMessage());
         }
     }
 
