@@ -1,16 +1,18 @@
 package src.models;
 
-public class Declination {
+import java.io.Serializable;
+
+public class Declination implements Serializable {
    private int xx;
    private int yy;
-   private float zz;
+   private double zz;
 
    // constructor
-   public Declination(int xx, int yy, float zz) {
+   public Declination(int xx, int yy, double zz) {
        // xx - degrees (angles)
-       if (xx < 0 || xx > 90)
+       if (xx < -90 || xx > 90)
        {
-           throw new IllegalArgumentException("Degrees must be values between 0 and 90");
+           throw new IllegalArgumentException("Degrees must be values between -90 and 90");
        }
        this.xx = xx;
        // yy - minutes
@@ -37,9 +39,13 @@ public class Declination {
    }
 
    // zz.zz - seconds
-   public float getZZ() {
+   public double getZZ() {
        return zz;
    }
 
-
+   // toString()
+   @Override
+    public String toString() {
+       return String.format("%d° %d' %.2f''", getXX(), getYY(), getZZ());
+   }
 }

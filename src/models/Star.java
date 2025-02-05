@@ -22,74 +22,147 @@ public class Star implements Serializable {
 
     private String name;
     private String catalogName;
+    private Hemisphere hemisphere;
     private Declination declination;
     private RightAscension rightAscension;
     private double apparentMagnitude;
     private double absoluteMagnitude;
     private double distance; // in light years
     private Constellation constellation;
-    private Hemisphere hemisphere;
     private double temperature;
     private double mass;
 
-    //catalogs that will contain any stars and constellatons created
-    private static final String STARS_FOLDER = "src/data/stars/"; 
-    private static final String CONSTELLATIONS_FOLDER = "src/data/constellations/";
+    // catalog that will contain stars
+    private static final String STARS_FOLDER = "src/data/stars/";
 
-    // constructor - to update (exceptions)
-    public Star(String name, String catalogName, Declination declination, RightAscension rightAscension,
-                double apparentMagnitude, double distance, Constellation constellation, String hemisphere,
+    // Constructor - to update (exceptions)
+    public Star(String name, Hemisphere hemisphere, Declination declination, RightAscension rightAscension,
+                Constellation constellation, double apparentMagnitude, double distance,
                 double temperature, double mass) {
-        // validate name
         if (!name.matches("[A-Z]{3}[0-9]{4}")) {
             throw new IllegalArgumentException("Name must contain 3 uppercase letters and 4 digits");
         }
-        this.name = name;
-        // !!! TO DO: validate catalogName -> 1 greek letter + constellation name which it was added to
-        this.catalogName = createCatalogName(constellation); 
-        this.declination = declination;
-        this.rightAscension = rightAscension;
-        // validate apparentMagnitude
+        // validate other required fields
+        if (hemisphere == null) {
+            throw new IllegalArgumentException("Hemisphere cannot be null.");
+        }
+        if (declination == null) {
+            throw new IllegalArgumentException("Declination cannot be null.");
+        }
+        if (rightAscension == null) {
+            throw new IllegalArgumentException("Right Ascension cannot be null.");
+        }
+        if (constellation == null) {
+            throw new IllegalArgumentException("Constellation cannot be null.");
+        }
+
+        // assign hemisphere before validating declination
+        this.hemisphere = hemisphere;
+        validateDeclination(declination); // validate declination based on hemisphere
+
         if (apparentMagnitude < -26.74 || apparentMagnitude > 15.00) {
             throw new IllegalArgumentException("Apparent magnitude must be between -26.74 and 15.00");
         }
-        this.apparentMagnitude = apparentMagnitude;
-        this.absoluteMagnitude = calculateAbsoluteMagnitude(apparentMagnitude, distance);
-        // validate distance
         if (distance <= 0) {
             throw new IllegalArgumentException("Distance must be greater than 0");
         }
-        this.distance = distance;
-        this.constellation = constellation;
-        // validate hemisphere using fromString
-        this.hemisphere = Hemisphere.fromString(hemisphere);
-        // validate temperature
         if (temperature < 2000) {
             throw new IllegalArgumentException("Temperature must be at least 2000 degrees Celsius");
         }
-        this.temperature = temperature;
-        // validate mass
         if (mass < 0.1 || mass > 50) {
             throw new IllegalArgumentException("Mass must be min. 0.1 to max. 50 solar masses");
         }
+
+        this.name = name;
+        this.declination = declination;
+        this.rightAscension = rightAscension;
+        this.constellation = constellation;
+        this.apparentMagnitude = apparentMagnitude;
+        this.distance = distance;
+        this.temperature = temperature;
         this.mass = mass;
 
-        saveStar(); //after creating a star it will get saved to the catalog
+        // calculate values not provided in constructor
+        this.catalogName = createCatalogName(constellation);
+        this.absoluteMagnitude = calculateAbsoluteMagnitude(apparentMagnitude, distance);
+
+        saveStar(); // after creating a star it will get saved to the catalog
         updateCatalog(constellation);
     }
 
-    // Star coordinates
-    public String getStarCoordinates() {
-        return String.format(
-                "1. Declination: %d° %d' %.2f''%n2. Right ascension: %02d h %d m %d s",
-                declination.getXX(),
-                declination.getYY(),
-                declination.getZZ(),
-                rightAscension.getXX(),
-                rightAscension.getYY(),
-                rightAscension.getZZ()
-        );
+
+    // GETTERS:
+    // Name
+    public String getName() {
+        return name;
     }
+    // Catalog Name
+    public String getCatalogName() {
+        return catalogName;
+    }
+    // Declination
+    public String getDeclination() {
+        return declination.toString();
+    }
+    // Right Ascension
+    public String getRightAscension() {
+        return rightAscension.toString();
+    }
+    // Apparent Magnitude
+    public double getApparentMagnitude() {
+        return apparentMagnitude;
+    }
+    // Absolute Magnitude
+    public double getAbsoluteMagnitude() {
+        return absoluteMagnitude;
+    }
+    // Distance (in light years)
+    public double getDistance() {
+        return distance;
+    }
+    // Constellation
+    public String getConstellation() {
+        return constellation.getName();
+    }
+
+    // for updateCatalog() method
+    public Constellation getConstellation2() {
+        return constellation;
+    }
+
+    // Hemisphere
+    public Hemisphere getHemisphere() {
+        return hemisphere;
+    }
+    // Temperature
+    public double getTemperature() {
+        return temperature;
+    }
+    // Mass
+    public double getMass() {
+        return mass;
+    }
+
+
+    // Method for validating declination based on hemisphere
+    private void validateDeclination(Declination declination) {
+        int degrees = declination.getXX();
+
+        if (hemisphere == Hemisphere.NORTHERN) {
+            if (degrees < 0 || degrees > 90) {
+                throw new IllegalArgumentException("For the Northern Hemisphere, declination must be between 0° and 90°.");
+            }
+        }
+        else if (hemisphere == Hemisphere.SOUTHERN) {
+            if (degrees < -90 || degrees > 0) {
+                throw new IllegalArgumentException("For the Southern Hemisphere, declination must be between -90° and 0°.");
+            }
+        }
+        else {
+            throw new IllegalArgumentException("Invalid hemisphere");
+        }
+    }
+
 
     // Method: Calculate Absolute Magnitude
     public double calculateAbsoluteMagnitude(double apparentMagnitude, double distance) {
@@ -112,12 +185,20 @@ public class Star implements Serializable {
         nadawane są gwiazdom w takiej kolejności, w jakiej dodane zostały
         do gwiazdozbioru. np gamma Wolarza
      */
-    private String createCatalogName(Constellation constellation) 
+    private String createCatalogName(Constellation constellation)
     {
-        List<Star> stars = loadStarsFromFile(constellation.getName());
-        int count = stars.size();
+        List<Star> allStars = loadStarsFromFile();
+        List<Star> starsInConstellation = new ArrayList<>();
 
-        if (count >= GreekAlphabet.values().length) 
+        // find stars only from constellation
+        for (Star star : allStars) {
+            if (star.getConstellation2().equals(constellation)) {
+                starsInConstellation.add(star);
+            }
+        }
+        int count = starsInConstellation.size();
+
+        if (count >= GreekAlphabet.values().length)
         {
             throw new IllegalStateException("Limit of stars in a constellation has been reached!");
             //since theres 24? letters in greek alphabet there cant be more stars names after that
@@ -126,133 +207,331 @@ public class Star implements Serializable {
         return greekLetter + " " + constellation.getName();
     }
 
-      // method that loads all created stars (and returns it as a list)
-      private static List<Star> loadStarsFromFile(String constellationName)
-       {
-        File file = new File(STARS_FOLDER + constellationName + ".obj");
-        if (!file.exists()) 
-        {
-            return new ArrayList<>();
+    // method that loads ALL created stars (and returns it as a list)
+    public static List<Star> loadStarsFromFile()
+    {
+        List<Star> allStars = new ArrayList<>();
+        File directory = new File(STARS_FOLDER);
+
+        // check if directory exists
+        if (!directory.exists() || !directory.isDirectory()) {
+            System.err.println("Star directory not found: " + STARS_FOLDER);
+            return allStars; // returns empty list if dir doesn't exist
         }
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file)))
-        {
-            return (List<Star>) ois.readObject();
-        } 
-        catch (IOException | ClassNotFoundException e) 
-        {
-            e.printStackTrace();
-            return new ArrayList<>();
+
+        File[] files = directory.listFiles((dir, name) -> name.endsWith(".obj"));
+        if (files == null) {
+            System.out.println("No stars found in directory: " + STARS_FOLDER);
+            return allStars;
         }
+
+        // load stars from files
+        for (File file : files) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                Star star = (Star) ois.readObject();
+                allStars.add(star);
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("Error loading stars from file: " + file.getName());
+                e.printStackTrace();
+            }
+        }
+
+        return allStars;
     }
 
     // method that updates stars names +numbers of stars in a constellation after a star was deleted
-    /* 
+    /*
      W przypadku usunięcia np. gwiazdy beta w danym gwiazdozbiorze, należy
      zadbać, o to, aby wszystkie pozostałe nazwy katalogowe zostały
      uaktualnione. Np. po usunięciu gwiazdy alfa Ryb, wszystkie pozostałe
      gwiazdy w gwiazdozbiorze są aktualizowane, tj. beta Ryb na alfa Ryb,
      gamma Ryb na beta Ryb i tak dalej.
      */
-    private static void updateCatalog(Constellation constellation) 
+    private static void updateCatalog(Constellation constellation)
     {
-        List<Star> stars = loadStarsFromFile(constellation.getName());
+        List<Star> stars = loadStarsFromFile();
+        // load all stars from specific constellation
+        List<Star> starsInConstellation = new ArrayList<>();
+        for (Star star : stars) {
+            if (star.getConstellation2().equals(constellation)) {
+                starsInConstellation.add(star);
+            }
+        }
 
         // sorted stars
-        stars.sort(Comparator.comparingInt(star -> Arrays.asList(GreekAlphabet.values())
+        starsInConstellation.sort(Comparator.comparingInt(star -> Arrays.asList(GreekAlphabet.values())
                 .indexOf(GreekAlphabet.valueOf(star.catalogName.split(" ")[0]))));
         // updated names
-        for (int i = 0; i < stars.size(); i++) 
-        {
-            stars.get(i).catalogName = GreekAlphabet.values()[i].name() + " " + constellation.getName();
+        for (int i = 0; i < starsInConstellation.size(); i++) {
+            starsInConstellation.get(i).catalogName = GreekAlphabet.values()[i].name() + " " + constellation.getName();
+            saveStarToFile(starsInConstellation.get(i));
         }
-        saveStarsToFile(stars, constellation.getName());
     }
 
-    // method that helps with updating catalog 
-    private static void saveStarsToFile(List<Star> stars, String constellationName) 
+    // method that helps with updating catalog
+    // Method: Saving added star to file
+    public static void saveStarToFile(Star star)
     {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(STARS_FOLDER 
-        + constellationName + ".obj"))) 
-        {
-            oos.writeObject(stars);
-        } 
-        catch (IOException e)
-        {
+        String filePath = STARS_FOLDER + star.getName() + ".obj";
+
+        // check if directory exists, otherwise -> create one
+        File directory = new File(STARS_FOLDER);
+        if (!directory.exists()) {
+            System.err.println("Error: Could not create directory " + STARS_FOLDER);
+        }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(star);
+            System.out.println("Star saved to: " + filePath);
+        }
+        catch (IOException e) {
+            System.err.println("Error: Couldn't save star to file: " + filePath);
             e.printStackTrace();
         }
     }
 
-    // metod that saves a created star (used in constructor)
-    private void saveStar() 
+    // method that saves a created star (used in constructor)
+    private void saveStar()
     {
-        List<Star> stars = loadStarsFromFile(constellation.getName());
+        List<Star> stars = loadStarsFromFile();
         stars.add(this);
-        saveStarsToFile(stars, constellation.getName());
+        saveStarToFile(this);
     }
 
-    // method that deletes a star 
-    public static void removeStar(String name, String constellationName) 
+    // method that deletes a star BASED ON CHOSEN CATALOG NAME
+    public static void removeStar(String name)
     {
-        List<Star> stars = loadStarsFromFile(constellationName);
-        stars.removeIf(star -> star.catalogName.equals(name)); // if a star exist in catalog
-        updateCatalog(new Constellation(constellationName)); // updating constellation's stars' names 
-                                                            // in catalog after a star has been removed
-        saveStarsToFile(stars, constellationName); // saving changes
-    }
+        List<Star> stars = loadStarsFromFile();
+        Star starToRemove = null;
 
-    // method that finds supernovas (if there are any) and returns a list of them
-    public static List<Star> Supernovas(String constellationName) 
-    {
-        List<Star> stars = loadStarsFromFile(constellationName);
-        List<Star> supernovas = new ArrayList<>();
-        for (Star star : stars) 
-        {
-            if (star.mass > 1.44) 
-            {
-                supernovas.add(star);
+        // finding star to remove
+        for (Star star : stars) {
+            if (star.getCatalogName().equalsIgnoreCase(name)) {
+                starToRemove = star;
+                break;
             }
         }
-        return supernovas;
+
+        // if star exists, remove it
+        if (starToRemove != null) {
+            stars.remove(starToRemove);
+
+            // delete file associated with the star
+            String filePath = STARS_FOLDER + starToRemove.getName() + ".obj";
+            File file = new File(filePath);
+            if (file.exists() && file.delete()) {
+                System.out.println("Star file deleted: " + filePath);
+            } else {
+                System.err.println("Error: Could not delete file " + filePath);
+            }
+
+            // update catalog (renaming other stars)
+            updateCatalog(starToRemove.getConstellation2());
+            System.out.println("Star has been removed from catalog.");
+        }
+
+        else {
+            System.out.println("Error: Star not found in catalog.");
+        }
     }
 
+    // METHODS FOR SEARCHING STARS BASED ON CRITERIAS
 
+    // Method that finds stars in x parsecs distance from Earth
+    public static void findStarByDistance(double distanceInput) {
+        List<Star> stars = loadStarsFromFile();
+        boolean foundStars = false;
+
+        try {
+            for (Star star: stars) {
+                double distanceInParsecs = star.getDistance() * 0.3066013938; // convert light years to parsecs
+                double roundedDistance = Math.round(distanceInParsecs * 100.00)/100.00; // rounding up to 2 places
+                if (roundedDistance == distanceInput) {
+                    foundStars = true;
+                    System.out.println("* Star Name: " + star.getName() + ";" + " Rounded Star distance in parsecs: " + roundedDistance + ";" + " Precise Star distance in parsecs: " + distanceInParsecs);
+                }
+            }
+            if (!foundStars) {
+                System.out.println("No stars found in this distance ;(");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Invalid distance input. " + e.getMessage());
+        }
+    }
+
+    // Method that finds stars based on temperature (in chosen interval)
+    public static void findStarByTemperature(double intervalStart, double intervalEnd) {
+        List<Star> stars = loadStarsFromFile();
+        boolean foundStars = false;
+
+        try {
+            for (Star star: stars) {
+                if (star.temperature >= intervalStart && star.temperature <= intervalEnd) {
+                    System.out.println("* Star Name: " + star.getName() + ";" + " Star temperature: " + star.getTemperature() + "°C");
+                    foundStars = true;
+                }
+            }
+            if (!foundStars) {
+                System.out.println("No stars found in this temperature interval ;(");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Invalid temperature input. " + e.getMessage());
+        }
+    }
+
+    // Method that finds stars based on absolute magnitude (in chosen interval)
+    public static void findStarByMagnitude(double intervalStart, double intervalEnd) {
+        List<Star> stars = loadStarsFromFile();
+        boolean foundStars = false;
+        try {
+            for (Star star: stars) {
+                if (star.getAbsoluteMagnitude() >= intervalStart && star.getAbsoluteMagnitude() <= intervalEnd) {
+                    System.out.println("* Star Name: " + star.getName() + ";" + " Absolute magnitude: " + star.getAbsoluteMagnitude());
+                    foundStars = true;
+                }
+            }
+            if (!foundStars) {
+                System.out.println("No stars found in this absolute magnitude interval ;(");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Invalid magnitude input. " + e.getMessage());
+        }
+    }
+    // Method that finds stars based on hemisphere
+    public static void findStarByHemisphere(String hemisphereName) {
+        List<Star> stars = loadStarsFromFile();
+        boolean foundStars = false;
+
+        try {
+            Hemisphere hemisphere = Hemisphere.fromString(hemisphereName);
+
+            for (Star star : stars) {
+                if (star.getHemisphere() == hemisphere) {
+                    System.out.println("* Star Name: " + star.getName() + "; Hemisphere: " + star.getHemisphere().getAbbreviation());
+                    foundStars = true;
+                }
+            }
+            if (!foundStars) {
+                System.out.println("No stars found in this hemisphere ;(");
+            }
+
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Invalid hemisphere input. " + e.getMessage());
+        }
+    }
+
+    // method that finds supernovas (if there are any)
+    public static void findSupernovas()
+    {
+        List<Star> stars = loadStarsFromFile();
+        boolean potentialSupernova = false;
+
+        try {
+            for (Star star : stars)
+            {
+                if (star.getMass() > 1.44) // Chandrasekhar limit
+                {
+                    potentialSupernova = true;
+                    System.out.println("* Star Name: " + star.getName() + ";" + " Star mass: " + star.getMass() + " solar masses");
+                }
+            }
+            if (!potentialSupernova) {
+                System.out.println("No supernovas found ;(.");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Invalid mass input. " + e.getMessage());
+        }
+
+    }
+
+    // Star coordinates - not necessary but wanted to add it
+    public static void getStarCoordinates(String name) {
+        List<Star> allStars = loadStarsFromFile();
+        boolean foundStar = false;
+
+        try {
+            for (Star star : allStars)
+            {
+                if (star.getName().equalsIgnoreCase(name))
+                {
+                    foundStar = true;
+                    System.out.println("* Star Name: " + star.getName() + ";" + " 1. Declination: " + star.getDeclination() + " 2. Right ascension: " + star.getRightAscension());
+                }
+            }
+            if (!foundStar) {
+                System.out.println("No stars of this name found ;(.");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Incorrect star name " + e.getMessage());
+        }
+    }
+
+    // METHODS FOR DISPLAYING STARS
     // method that prints all existing stars with their attributes
     /*
      Oprócz dodania nowej gwiazdy możemy również wyświetlić wszystkie
      gwiazdy w bazie,
      */
-    public static void viewStars() 
+    public static void viewStars()
     {
-        File folder = new File(STARS_FOLDER);
-        File[] files = folder.listFiles();
-    
-        if (files == null || files.length == 0) 
-        {
-            System.out.println("There are no stars in database");
-            return;
+        List<Star> stars = loadStarsFromFile();
+        int size = stars.size();
+
+        if (size == 0) {
+            System.out.println("There are no stars to display");
         }
-    
-        for (File file : files) 
-        {
-            // removing .obj to get constellation's name
-            List<Star> stars = loadStarsFromFile(file.getName().replace(".obj", ""));
-            for (Star star : stars) 
-            {
+        else {
+            for (Star star : stars) {
                 System.out.println("-------------------------");
                 System.out.println("Name: " + star.name);
                 System.out.println("Catalog name: " + star.catalogName);
+                System.out.println("Hemisphere: " + star.hemisphere);
                 System.out.println("Declination: " + star.declination.getXX() + "° " + star.declination.getYY() + "' " + star.declination.getZZ() + "''");
-                System.out.println("Right ascention: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Right ascension: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Constellation: " + star.constellation.getName());
                 System.out.println("Apparent magnitude: " + star.apparentMagnitude);
                 System.out.println("Absolute magnitude: " + star.absoluteMagnitude);
-                System.out.println("Distance: " + star.distance);
-                System.out.println("Constellation: " + star.constellation.getName());
-                System.out.println("Hemisphere: " + star.hemisphere);
+                System.out.println("Distance: " + star.distance + " light years");
                 System.out.println("Temperature: " + star.temperature + "°C");
-                System.out.println("Mass: " + star.mass + " mas Słońca");
+                System.out.println("Mass: " + star.mass + " solar mass");
                 System.out.println("-------------------------\n");
             }
         }
     }
-    
+
+
+    // Method: Display Stars from a specific constellation
+    public static void displayContellationStars(String constellationName) {
+        List<Star> stars = loadStarsFromFile();
+        boolean foundStars = false;
+
+        for (Star star : stars) {
+            if (star.getConstellation().equalsIgnoreCase(constellationName)) {
+                foundStars = true;
+                System.out.println("-------------------------");
+                System.out.println("Name: " + star.name);
+                System.out.println("Catalog name: " + star.catalogName);
+                System.out.println("Hemisphere: " + star.hemisphere);
+                System.out.println("Declination: " + star.declination.getXX() + "° " + star.declination.getYY() + "' " + star.declination.getZZ() + "''");
+                System.out.println("Right ascension: " + star.rightAscension.getXX() + "h " + star.rightAscension.getYY() + "m " + star.rightAscension.getZZ() + "s");
+                System.out.println("Constellation: " + star.constellation.getName());
+                System.out.println("Apparent magnitude: " + star.apparentMagnitude);
+                System.out.println("Absolute magnitude: " + star.absoluteMagnitude);
+                System.out.println("Distance: " + star.distance + " light years");
+                System.out.println("Constellation: " + star.constellation.getName());
+                System.out.println("Temperature: " + star.temperature + "°C");
+                System.out.println("Mass: " + star.mass + " solar mass");
+                System.out.println("-------------------------\n");
+            }
+        }
+        if (!foundStars) {
+            System.out.println("No stars in this constellation have been found ;(");
+        }
+    }
 }
