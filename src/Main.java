@@ -38,11 +38,15 @@ public class Main {
             switch (choice) {
                 case 1:
                     viewStars();
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 2:
                     System.out.println("Enter constellation name:");
                     String consName = scanner.nextLine();
                     displayContellationStars(consName);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 3:
                     // Name
@@ -177,6 +181,9 @@ public class Main {
                         initializeStarCountMap();
 
                         System.out.println("\n!!! DON'T FORGET TO SAVE YOUR STAR TO FILE !!! (11. in menu :)) ");
+
+                        System.out.println("Press Enter to continue...");
+                        scanner.nextLine();
                     } 
                     catch (IllegalArgumentException e) 
                     {
@@ -190,17 +197,23 @@ public class Main {
                     System.out.println("Enter catalog name of the star you want to remove: ");
                     String catalogName = scanner.nextLine();
                     removeStar(catalogName);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 5:
                     System.out.println("Enter name of the star: ");
                     String name1 = scanner.nextLine();
                     getStarCoordinates(name1);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 6:
                     System.out.println("\nEnter distance from Earth (in parsecs, up to 2 spaces after coma): ");
                     double distanceParsecs = scanner.nextDouble();
                     System.out.println("\nFound stars in chosen distance: ");
                     findStarByDistance(distanceParsecs);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 7:
                     System.out.println("\nEnter min temperature: ");
@@ -209,6 +222,8 @@ public class Main {
                     double maxTemp = scanner.nextDouble();
                     System.out.println("\nFound stars in chosen temperature interval: ");
                     findStarByTemperature(minTemp, maxTemp);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 8:
                     System.out.println("\nEnter min absolute magnitude: ");
@@ -217,16 +232,22 @@ public class Main {
                     double maxMag = scanner.nextDouble();
                     System.out.println("\nFound stars in chosen absolute magnitude interval: ");
                     findStarByMagnitude(minMag, maxMag);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 9:
                     System.out.println("\nEnter hemisphere: ");
                     String hemisphereName = scanner.nextLine();
                     System.out.println("\nFound stars in chosen hemisphere: ");
                     findStarByHemisphere(hemisphereName);
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 10:
                     System.out.println("\nFound supernovas: ");
                     findSupernovas();
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 11:
                     System.out.println("\nWhich Star would you like to save? (enter Star's name): ");
@@ -247,7 +268,8 @@ public class Main {
                     } else {
                         System.out.println("\nStar not found. You have to create a star first.");
                     }
-
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine();
                     break;
                 case 12:
                     System.out.println("\nSee you soon!");
